@@ -57,7 +57,7 @@ private:
     int userVersion() const;
 
     QSqlDatabase m_db;
-    QString m_lastError;
+    mutable QString m_lastError;
 };
 
 #endif // DATABASE_H

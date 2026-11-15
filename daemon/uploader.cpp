@@ -6,7 +6,9 @@
 #include <QUrl>
 
 #include "config.h"
-#include "tracklogpaths.h"Uploader::Uploader(Database *db, Config *config, QObject *parent)
+#include "tracklogpaths.h"
+
+Uploader::Uploader(Database *db, Config *config, QObject *parent)
     : QObject(parent)
     , m_db(db)
     , m_config(config)
