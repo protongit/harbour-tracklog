@@ -109,6 +109,10 @@ Page {
 
             ButtonLayout {
                 Button {
+                    text: qsTr("Histórico")
+                    onClicked: pageStack.push(Qt.resolvedUrl("HistoryPage.qml"))
+                }
+                Button {
                     text: qsTr("Actualizar")
                     onClicked: trackclient.refresh()
                 }
