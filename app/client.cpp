@@ -40,7 +40,10 @@ QString TrackClient::statusText() const
     if (!fixing()) {
         return QStringLiteral("Esperando señal GPS…");
     }
-    return QStringLiteral("Grabando · precisión %1 m").arg(accuracy(), 0, 'f', 0);
+    if (accuracy() > 0) {
+        return QStringLiteral("Grabando · precisión %1 m").arg(accuracy(), 0, 'f', 0);
+    }
+    return QStringLiteral("Grabando · GPS activo");
 }
 
 bool TrackClient::serviceRegistered() const

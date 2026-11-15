@@ -70,9 +70,11 @@ Page {
 
             DetailRow {
                 label: qsTr("GPS")
-                value: trackclient.fixing
-                       ? qsTr("fix") + " · " + Math.round(trackclient.accuracy) + " m"
-                       : qsTr("sin fix")
+                value: !trackclient.fixing
+                       ? qsTr("sin fix")
+                       : (trackclient.accuracy > 0
+                          ? qsTr("fix") + " · " + Math.round(trackclient.accuracy) + " m"
+                          : qsTr("fix"))
             }
             DetailRow {
                 label: qsTr("Puntos hoy")

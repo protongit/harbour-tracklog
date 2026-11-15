@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QGeoCoordinate>
 
+#include <cmath>
+
 #include "config.h"
 #include "database.h"
 
@@ -42,7 +44,8 @@ double Tracker::accuracy() const
     if (!hasFix()) {
         return -1.0;
     }
-    return m_latest.attribute(QGeoPositionInfo::HorizontalAccuracy);
+    const double value = m_latest.attribute(QGeoPositionInfo::HorizontalAccuracy);
+    return std::isfinite(value) && value > 0.0 ? value : -1.0;
 }
 
 qint64 Tracker::lastFixTimestamp() const
@@ -131,10 +134,8 @@ bool Tracker::recordCurrent()
 
     const QGeoCoordinate coordinate = m_latest.coordinate();
     double acc = m_latest.attribute(QGeoPositionInfo::HorizontalAccuracy);
-    if (acc <= 0.0) {
-        acc = 9999.0;
-    }
-    if (acc > m_config->minAccuracyM()) {
+    const bool accValid = std::isfinite(acc) && acc > 0.0;
+    if (accValid && acc > m_config->minAccuracyM()) {
         ++m_ignored;
         emit statusChanged();
         return false;
@@ -142,7 +143,8 @@ bool Tracker::recordCurrent()
 
     if (m_haveLast) {
         const double distance = m_lastRecorded.distanceTo(coordinate);
-        const double minimum = qMax(static_cast<double>(m_config->minDistanceM()), acc);
+        const double minimum = qMax(static_cast<double>(m_config->minDistanceM()),
+                                    accValid ? acc : 0.0);
         if (distance < minimum) {
             emit statusChanged();
             return false;
@@ -156,7 +158,7 @@ bool Tracker::recordCurrent()
     point.altitude = coordinate.altitude();
     point.speed = m_latest.attribute(QGeoPositionInfo::GroundSpeed);
     point.bearing = m_latest.attribute(QGeoPositionInfo::Direction);
-    point.accuracy = acc;
+    point.accuracy = accValid ? acc : 0.0;
 
     const qint64 id = m_db->insertPoint(point);
     if (id <= 0) {
