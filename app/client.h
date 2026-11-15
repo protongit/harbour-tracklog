@@ -22,6 +22,8 @@ class TrackClient : public QObject
     Q_PROPERTY(QString lastError READ lastError NOTIFY statusChanged)
     Q_PROPERTY(QString statusText READ statusText NOTIFY statusChanged)
     Q_PROPERTY(int intervalSec READ intervalSec NOTIFY statusChanged)
+    Q_PROPERTY(int minAccuracyM READ minAccuracyM NOTIFY statusChanged)
+    Q_PROPERTY(int minDistanceM READ minDistanceM NOTIFY statusChanged)
     Q_PROPERTY(bool uploadEnabled READ uploadEnabled NOTIFY statusChanged)
     Q_PROPERTY(QString serverUrl READ serverUrl NOTIFY statusChanged)
     Q_PROPERTY(QString deviceId READ deviceId NOTIFY statusChanged)
@@ -44,6 +46,8 @@ public:
     QString lastError() const { return m_status.value(QStringLiteral("lastError")).toString(); }
     QString statusText() const;
     int intervalSec() const { return m_status.value(QStringLiteral("intervalSec")).toInt(); }
+    int minAccuracyM() const { return m_status.value(QStringLiteral("minAccuracyM")).toInt(); }
+    int minDistanceM() const { return m_status.value(QStringLiteral("minDistanceM")).toInt(); }
     bool uploadEnabled() const { return m_status.value(QStringLiteral("uploadEnabled")).toBool(); }
     QString serverUrl() const { return m_status.value(QStringLiteral("url")).toString(); }
     QString deviceId() const { return m_status.value(QStringLiteral("id")).toString(); }

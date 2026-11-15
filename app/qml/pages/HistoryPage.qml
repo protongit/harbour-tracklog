@@ -9,6 +9,7 @@ Page {
     property date fromDate: new Date(Date.now() - 6 * 24 * 3600 * 1000)
     property date toDate: new Date()
     property bool ready: false
+    property string exportPath: ""
 
     function applyPreset(index) {
         var now = new Date()
@@ -99,6 +100,26 @@ Page {
             DetailRow {
                 label: qsTr("Distancia")
                 value: history.distanceKm.toFixed(2) + " km"
+            }
+
+            Button {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("Exportar GPX")
+                enabled: !history.empty
+                onClicked: page.exportPath = history.exportGpx()
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                visible: page.exportPath.length > 0
+                text: page.exportPath.length > 0
+                      ? qsTr("GPX guardado en:\n") + page.exportPath
+                      : ""
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+                wrapMode: Text.Wrap
             }
 
             SectionHeader { text: qsTr("Días") }

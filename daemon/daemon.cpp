@@ -137,6 +137,8 @@ QVariantMap Daemon::statusMap()
     status.insert(QStringLiteral("lastError"), m_uploader ? m_uploader->lastError() : QString());
     status.insert(QStringLiteral("uploadedSession"), m_uploader ? m_uploader->uploadedCount() : 0);
     status.insert(QStringLiteral("intervalSec"), m_config.intervalSec());
+    status.insert(QStringLiteral("minAccuracyM"), m_config.minAccuracyM());
+    status.insert(QStringLiteral("minDistanceM"), m_config.minDistanceM());
     status.insert(QStringLiteral("uploadEnabled"), m_config.uploadEnabled());
     status.insert(QStringLiteral("url"), m_config.url());
     status.insert(QStringLiteral("id"), m_config.deviceId());

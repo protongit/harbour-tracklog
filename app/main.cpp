@@ -112,11 +112,14 @@ int main(int argc, char *argv[])
 {
     bool checkMode = false;
     bool openHistory = false;
+    bool exportGpx = false;
     for (int i = 1; i < argc; ++i) {
         if (qstrcmp(argv[i], "--check") == 0) {
             checkMode = true;
         } else if (qstrcmp(argv[i], "--open-history") == 0) {
             openHistory = true;
+        } else if (qstrcmp(argv[i], "--export-gpx") == 0) {
+            exportGpx = true;
         }
     }
 
@@ -131,6 +134,14 @@ int main(int argc, char *argv[])
 
     if (checkMode) {
         return runQmlCheck();
+    }
+
+    if (exportGpx) {
+        HistoryModel history;
+        history.setPreset(-1);
+        const QString path = history.exportGpx();
+        qInfo().noquote() << "gpx export:" << (path.isEmpty() ? QStringLiteral("FAILED") : path);
+        return path.isEmpty() ? 1 : 0;
     }
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());

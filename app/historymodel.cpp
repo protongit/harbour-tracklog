@@ -2,12 +2,15 @@
 
 #include <QDate>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QMap>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QStandardPaths>
 #include <QVariant>
 #include <QVector>
+#include <QXmlStreamWriter>
 #include <QtMath>
 
 #include "tracklogpaths.h"
@@ -174,4 +177,85 @@ void HistoryModel::reload()
     }
 
     emit changed();
+}
+
+QString HistoryModel::exportGpx()
+{
+    if (!ensureDatabase()) {
+        return QString();
+    }
+
+    const qint64 from = m_from.toMSecsSinceEpoch() / 1000;
+    const qint64 to = m_to.toMSecsSinceEpoch() / 1000;
+
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral(
+        "SELECT ts, lat, lon, alt FROM points"
+        " WHERE ts >= ? AND ts <= ? ORDER BY ts ASC"));
+    query.addBindValue(from);
+    query.addBindValue(to);
+    if (!query.exec()) {
+        return QString();
+    }
+
+    const QString base = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (base.isEmpty()) {
+        return QString();
+    }
+    const QString dir = base + QStringLiteral("/TrackLog");
+    if (!QDir().mkpath(dir)) {
+        return QString();
+    }
+
+    const QString path = dir + QStringLiteral("/tracklog-")
+            + m_from.toString(QStringLiteral("yyyyMMdd-HHmm"))
+            + QStringLiteral(".gpx");
+
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        return QString();
+    }
+
+    QXmlStreamWriter xml(&file);
+    xml.setAutoFormatting(true);
+    xml.writeStartDocument(QStringLiteral("1.0"));
+    xml.writeStartElement(QStringLiteral("gpx"));
+    xml.writeDefaultNamespace(QStringLiteral("http://www.topografix.com/GPX/1/1"));
+    xml.writeAttribute(QStringLiteral("version"), QStringLiteral("1.1"));
+    xml.writeAttribute(QStringLiteral("creator"), QStringLiteral("TrackLog"));
+
+    xml.writeStartElement(QStringLiteral("metadata"));
+    xml.writeTextElement(QStringLiteral("name"),
+                         QStringLiteral("TrackLog %1").arg(m_rangeText));
+    xml.writeTextElement(QStringLiteral("time"),
+                         QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
+    xml.writeEndElement();
+
+    xml.writeStartElement(QStringLiteral("trk"));
+    xml.writeTextElement(QStringLiteral("name"), QStringLiteral("TrackLog"));
+    xml.writeStartElement(QStringLiteral("trkseg"));
+
+    while (query.next()) {
+        const qint64 ts = query.value(0).toLongLong();
+        const double lat = query.value(1).toDouble();
+        const double lon = query.value(2).toDouble();
+        const double alt = query.value(3).toDouble();
+
+        xml.writeStartElement(QStringLiteral("trkpt"));
+        xml.writeAttribute(QStringLiteral("lat"), QString::number(lat, 'f', 7));
+        xml.writeAttribute(QStringLiteral("lon"), QString::number(lon, 'f', 7));
+        xml.writeTextElement(QStringLiteral("ele"), QString::number(alt, 'f', 1));
+        xml.writeTextElement(QStringLiteral("time"),
+                             QDateTime::fromMSecsSinceEpoch(ts * 1000, Qt::UTC)
+                             .toString(Qt::ISODate));
+        xml.writeEndElement();
+    }
+
+    xml.writeEndElement(); // trkseg
+    xml.writeEndElement(); // trk
+    xml.writeEndElement(); // gpx
+    xml.writeEndDocument();
+    file.close();
+
+    return path;
 }

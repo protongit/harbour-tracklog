@@ -51,6 +51,26 @@ Page {
                 }
             }
 
+            TextField {
+                id: accuracyField
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                label: qsTr("Precisión máxima (m)")
+                inputMethodHints: Qt.ImhDigitsOnly
+                EnterKey.iconSource: "image://theme/icon-m-enter-next"
+                EnterKey.onClicked: distanceField.focus = true
+            }
+
+            TextField {
+                id: distanceField
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                label: qsTr("Distancia mínima (m)")
+                inputMethodHints: Qt.ImhDigitsOnly
+                EnterKey.iconSource: "image://theme/icon-m-enter-next"
+                EnterKey.onClicked: uploadSwitch.focus = true
+            }
+
             TextSwitch {
                 id: uploadSwitch
                 text: qsTr("Subir puntos")
@@ -80,7 +100,9 @@ Page {
                         "uploadEnabled": uploadSwitch.checked,
                         "traccar": traccarSwitch.checked,
                         "autoStart": autoStartSwitch.checked,
-                        "intervalSec": page.intervals[intervalCombo.currentIndex]
+                        "intervalSec": page.intervals[intervalCombo.currentIndex],
+                        "minAccuracyM": parseInt(accuracyField.text) || 120,
+                        "minDistanceM": parseInt(distanceField.text) || 0
                     })
                     pageStack.pop()
                 }
@@ -103,6 +125,8 @@ Page {
         uploadSwitch.checked = trackclient.uploadEnabled
         traccarSwitch.checked = trackclient.traccar
         autoStartSwitch.checked = trackclient.autoStart
+        accuracyField.text = trackclient.minAccuracyM > 0 ? trackclient.minAccuracyM : 120
+        distanceField.text = trackclient.minDistanceM > 0 ? trackclient.minDistanceM : 0
 
         var index = page.intervals.indexOf(trackclient.intervalSec)
         intervalCombo.currentIndex = index >= 0 ? index : 1

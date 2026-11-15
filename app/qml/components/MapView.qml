@@ -200,28 +200,44 @@ Item {
         }
     }
 
-    MouseArea {
-        id: dragArea
+    PinchArea {
         anchors.fill: parent
-        property real lastX: 0
-        property real lastY: 0
+        property real lastScale: 1
 
-        onPressed: {
-            lastX = mouse.x
-            lastY = mouse.y
-        }
-        onPositionChanged: {
-            if (!pressed) {
-                return
+        onPinchStarted: lastScale = 1
+        onPinchUpdated: {
+            if (pinch.scale > lastScale * 1.4) {
+                map.setZoom(map.zoom + 1)
+                lastScale = pinch.scale
+            } else if (pinch.scale < lastScale * 0.7) {
+                map.setZoom(map.zoom - 1)
+                lastScale = pinch.scale
             }
-            var dx = mouse.x - lastX
-            var dy = mouse.y - lastY
-            lastX = mouse.x
-            lastY = mouse.y
-            map.panBy(dx, dy)
         }
-        onReleased: map.updateTiles()
-        onCanceled: map.updateTiles()
+
+        MouseArea {
+            id: dragArea
+            anchors.fill: parent
+            property real lastX: 0
+            property real lastY: 0
+
+            onPressed: {
+                lastX = mouse.x
+                lastY = mouse.y
+            }
+            onPositionChanged: {
+                if (!pressed) {
+                    return
+                }
+                var dx = mouse.x - lastX
+                var dy = mouse.y - lastY
+                lastX = mouse.x
+                lastY = mouse.y
+                map.panBy(dx, dy)
+            }
+            onReleased: map.updateTiles()
+            onCanceled: map.updateTiles()
+        }
     }
 
     Column {

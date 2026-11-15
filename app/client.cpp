@@ -141,6 +141,14 @@ void TrackClient::writeLocalConfig(const QVariantMap &config)
         settings.setValue(QStringLiteral("capture/intervalSec"),
                           config.value(QStringLiteral("intervalSec")).toInt());
     }
+    if (config.contains(QStringLiteral("minAccuracyM"))) {
+        settings.setValue(QStringLiteral("capture/minAccuracyM"),
+                          config.value(QStringLiteral("minAccuracyM")).toInt());
+    }
+    if (config.contains(QStringLiteral("minDistanceM"))) {
+        settings.setValue(QStringLiteral("capture/minDistanceM"),
+                          config.value(QStringLiteral("minDistanceM")).toInt());
+    }
     if (config.contains(QStringLiteral("autoStart"))) {
         settings.setValue(QStringLiteral("capture/autoStart"),
                           config.value(QStringLiteral("autoStart")).toBool());

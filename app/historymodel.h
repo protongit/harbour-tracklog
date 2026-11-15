@@ -32,6 +32,7 @@ public:
     Q_INVOKABLE void setRangeMs(qint64 fromMs, qint64 toMs);
     Q_INVOKABLE void setPreset(int days);
     Q_INVOKABLE void reload();
+    Q_INVOKABLE QString exportGpx();
 
 signals:
     void changed();

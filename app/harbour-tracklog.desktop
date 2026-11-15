@@ -12,4 +12,4 @@ Categories=Utility;
 [X-Sailjail]
 OrganizationName=org.hensip
 ApplicationName=tracklog
-Permissions=Internet;Location;TrackLog
+Permissions=Internet;Location;UserDirs;TrackLog
