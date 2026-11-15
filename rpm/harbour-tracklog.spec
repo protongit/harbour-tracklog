@@ -1,7 +1,7 @@
 Name:       harbour-tracklog
 Summary:    GPS logger with on-device history and background daemon
 Version:    0.1
-Release:    5
+Release:    6
 License:    MIT
 URL:        https://github.com/hensip/harbour-tracklog
 Source0:    %{name}-%{version}.tar.bz2
@@ -39,6 +39,8 @@ desktop-file-install --delete-original \
 
 install -D -m 644 packaging/tracklogd.service \
   %{buildroot}%{_prefix}/lib/systemd/user/tracklogd.service
+install -D -m 644 packaging/org.hensip.tracklog.service \
+  %{buildroot}%{_datadir}/dbus-1/services/org.hensip.tracklog.service
 install -D -m 644 packaging/TrackLog.permission \
   %{buildroot}/etc/sailjail/permissions/TrackLog.permission
 
@@ -50,8 +52,8 @@ if [ -d /home/defaultuser ]; then
   chown -R defaultuser:defaultuser /home/defaultuser/.config/systemd/user
 fi
 
-%preun
-if [ -d /home/defaultuser ]; then
+%postun
+if [ "$1" = "0" ] && [ -d /home/defaultuser ]; then
   rm -f /home/defaultuser/.config/systemd/user/default.target.wants/tracklogd.service
 fi
 
@@ -63,4 +65,5 @@ fi
 %{_datadir}/applications/harbour-tracklog.desktop
 %{_datadir}/icons/hicolor/*/apps/harbour-tracklog.png
 %{_prefix}/lib/systemd/user/tracklogd.service
+%{_datadir}/dbus-1/services/org.hensip.tracklog.service
 /etc/sailjail/permissions/TrackLog.permission

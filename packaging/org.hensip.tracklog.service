@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.hensip.tracklog
+Exec=/bin/false
+SystemdService=tracklogd.service
