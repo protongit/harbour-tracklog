@@ -11,9 +11,14 @@ plano e histórico sobre mapa.
   grabando con la app cerrada, la pantalla bloqueada o tras reiniciar.
 - **Control desde la app**: iniciar/parar la grabación y arrancar/parar el
   servicio, con estado en vivo (GPS, precisión, puntos, pendientes, errores).
-- **Histórico**: filtro por periodo (hoy / 7 / 30 días o rango con selector de
-  fechas), traza sobre mapa OSM con caché de tiles, distancia y resumen por día.
-  Exporta el periodo a **GPX** en `~/Documents/TrackLog/`.
+- **Histórico**: filtro por periodo (hoy / 7 / 30 días, rango con fechas o
+  tocando un día), traza coloreada por velocidad sobre mapa OSM con caché,
+  estadísticas (distancia, velocidad media/máxima, desnivel), gráfica de
+  velocidad, recorridos detectados y renombrables, y lista de puntos del día.
+  Exporta e **importa GPX** en `~/Documents/TrackLog/`.
+- **Batería**: intervalo adaptativo (se amplía al estar parado) y pausa
+  automática por debajo de un nivel de batería configurable. Registra el nivel
+  de batería en cada punto.
 - **Subida opcional** a PhoneTrack (o URL estilo Traccar), con cola persistente,
   reintentos con backoff y sin borrar nunca los puntos locales.
 
@@ -49,10 +54,12 @@ tracklogd (systemd --user, fuera de sailjail)
 |---|---|
 | `~/.local/share/org.hensip/tracklog/tracklog.db` | puntos (WAL), estado de subida |
 | `~/.local/share/org.hensip/tracklog/settings.ini` | configuración |
-| `~/.local/share/org.hensip/tracklog/tiles/` | caché de tiles OSM |
+| `~/.local/share/org.hensip/tracklog/tiles/<fuente>/` | caché de tiles (OSM, OpenTopoMap, CyclOSM) |
+| `~/.local/share/org.hensip/tracklog/trips.ini` | nombres personalizados de recorridos |
 | `~/.local/share/org.hensip/tracklog/tracklogd.log` | log del demonio (rota a 512 KB) |
 | `~/.local/share/org.hensip/tracklog/app.log` | log de la app (rota a 256 KB) |
-| `~/Documents/TrackLog/*.gpx` | exportaciones GPX |
+| `~/Documents/TrackLog/*.gpx` | exportaciones e importaciones GPX |
+| `~/Documents/TrackLog/*.db` | copias de seguridad de la base |
 
 ## Compilar
 
@@ -89,6 +96,13 @@ El `%post` crea el enlace de autostart en
 - **Distancia mínima (m)**: separación mínima entre puntos (además de la
   precisión actual).
 - **Subir puntos**: activa la cola de subida.
+- **Pausar por debajo de batería (%)**: 0 desactiva la pausa.
+- **Conservar histórico (días)**: 0 conserva todo; los puntos ya subidos se
+  podan a diario.
+- **Fuente de tiles**: OpenStreetMap, OpenTopoMap o CyclOSM.
+- **Geocerca**: aviso al entrar o salir de un radio (nombre, latitud, longitud,
+  radio).
+- **Probar conexión**, **copia de seguridad** y gestión de la caché de mapas.
 - **Grabar al iniciar**: arranca la grabación al iniciar sesión.
 
 La captura descarta puntos con precisión peor de 120 m y, en movimiento, exige
@@ -130,16 +144,23 @@ Implementado y probado en Jolla Phone 2026 (Sailfish OS 5.2.0.22):
 - [x] Permiso sailjail para el D-Bus propio
 - [x] App de control (estado, grabación, servicio, ajustes)
 - [x] Histórico con filtro de fechas, lista de días y mapa con caché
-- [x] Exportar GPX a `~/Documents/TrackLog/`
+- [x] Exportar e importar GPX
 - [x] Pinch-zoom y filtros de captura configurables
 - [x] Subida a PhoneTrack con cola y reintentos
+- [x] Estadísticas, gráfica de velocidad y recorridos renombrables
+- [x] Intervalo adaptativo y pausa por batería baja
+- [x] Mapa con traza coloreada, caché por fuente y descarga de zona
+- [x] Geocerca con notificación
+- [x] Retención configurable y copia de seguridad de la base
+- [x] Versionado de esquema (SQLite `user_version`)
+- [x] CI (GitHub Actions) y metadatos Chum
 
 Pendiente / ideas:
 
-- [ ] Traducciones (inglés)
-- [ ] Perfiles de batería predefinidos (p. ej. "excursión", "diario")
-- [ ] Compartir el GPX desde la app
-- [ ] Empaquetado para Chum/Harbour
+- [ ] Traducciones (el target del SDK no trae `lupdate/lrelease`)
+- [ ] Cifrado del histórico con SQLCipher + Sailfish Secrets
+- [ ] Empaquetado real en Chum/Harbour
+- [ ] Perfiles de batería predefinidos y medida de consumo en campo
 
 ## Licencia
 
