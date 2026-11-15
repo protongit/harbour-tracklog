@@ -12,6 +12,7 @@ Page {
     property string exportPath: ""
     property string importMessage: ""
     property string prefetchText: ""
+    property var renamingTrip: ({})
 
     function applyPreset(index) {
         var now = new Date()
@@ -213,6 +214,12 @@ Page {
                 delegate: DetailRow {
                     label: modelData.label
                     value: modelData.km.toFixed(1) + " km"
+                    interactive: true
+                    onClicked: {
+                        page.renamingTrip = modelData
+                        renameField.text = modelData.label
+                        renameDialog.open()
+                    }
                 }
             }
 
@@ -263,6 +270,27 @@ Page {
         onAccepted: {
             page.toDate = date
             page.applyRange()
+        }
+    }
+
+    Dialog {
+        id: renameDialog
+        onAccepted: history.setTripName(page.renamingTrip.startTs, renameField.text)
+
+        Column {
+            width: parent.width
+
+            DialogHeader {
+                title: qsTr("Renombrar recorrido")
+                acceptText: qsTr("Guardar")
+            }
+
+            TextField {
+                id: renameField
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                label: qsTr("Nombre")
+            }
         }
     }
 

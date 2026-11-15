@@ -87,6 +87,7 @@ public:
     Q_INVOKABLE void applyConfig(const QVariantMap &config);
     Q_INVOKABLE void testConnection();
     Q_INVOKABLE void importGpx(const QString &path);
+    Q_INVOKABLE void backupDatabase();
     Q_INVOKABLE void setTileSource(const QString &source);
 
 signals:
@@ -94,6 +95,7 @@ signals:
     void tileSourceChanged();
     void testFinished(const QVariantMap &result);
     void importFinished(int count);
+    void backupFinished(const QString &path);
 
 private slots:
     void onStatusChanged(const QVariantMap &status);

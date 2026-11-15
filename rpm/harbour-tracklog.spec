@@ -1,7 +1,7 @@
 Name:       harbour-tracklog
 Summary:    GPS logger with on-device history and background daemon
-Version:    0.1
-Release:    7
+Version:    0.2
+Release:    1
 License:    MIT
 URL:        https://github.com/hensip/harbour-tracklog
 Source0:    %{name}-%{version}.tar.bz2
@@ -22,6 +22,19 @@ BuildRequires:  desktop-file-utils
 TrackLog records GPS positions on the device and keeps a local history that can
 be browsed on a map with a date filter. A background daemon keeps recording when
 the application is closed, and optionally uploads the points to PhoneTrack.
+%if 0%{?_chum}
+Title: TrackLog
+Type: desktop-application
+DeveloperName: hensip
+Categories:
+ - Utility
+Custom:
+  Repo: https://github.com/hensip/harbour-tracklog
+PackageIcon: https://raw.githubusercontent.com/hensip/harbour-tracklog/main/app/icons/256x256/harbour-tracklog.png
+Links:
+  Homepage: https://github.com/hensip/harbour-tracklog
+  Bugtracker: https://github.com/hensip/harbour-tracklog/issues
+%endif
 
 %prep
 %setup -q -n %{name}-%{version}

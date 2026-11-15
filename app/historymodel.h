@@ -42,6 +42,7 @@ public:
     Q_INVOKABLE void reload();
     Q_INVOKABLE QString exportGpx();
     Q_INVOKABLE QVariantList gpxFiles() const;
+    Q_INVOKABLE void setTripName(qint64 startTs, const QString &name);
 
 signals:
     void changed();

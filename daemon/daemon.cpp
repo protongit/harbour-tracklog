@@ -336,6 +336,29 @@ int Daemon::ImportGpx(const QString &path)
     return imported;
 }
 
+QString Daemon::BackupDatabase()
+{
+    m_db.checkpoint();
+
+    const QString base = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (base.isEmpty()) {
+        return QString();
+    }
+    const QString dir = base + QStringLiteral("/TrackLog");
+    if (!QDir().mkpath(dir)) {
+        return QString();
+    }
+
+    const QString target = dir + QStringLiteral("/tracklog-backup-")
+            + QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"))
+            + QStringLiteral(".db");
+    if (!QFile::copy(TrackLog::dbPath(), target)) {
+        return QString();
+    }
+    qInfo() << "tracklogd: database backup written to" << target;
+    return target;
+}
+
 void Daemon::runRetention()
 {
     const int days = m_config.retentionDays();

@@ -7,6 +7,7 @@
 #include <QMap>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QVariant>
 #include <QVector>
@@ -196,6 +197,28 @@ void HistoryModel::reload()
     }
 
     // Split into trips on gaps longer than 30 minutes.
+    QSettings tripNames(TrackLog::dataDir() + QStringLiteral("/trips.ini"),
+                        QSettings::IniFormat);
+
+    auto appendTrip = [this, &tripNames](qint64 start, qint64 end, int count, double km) {
+        QVariantMap trip;
+        trip.insert(QStringLiteral("startTs"), start);
+        trip.insert(QStringLiteral("endTs"), end);
+        trip.insert(QStringLiteral("count"), count);
+        trip.insert(QStringLiteral("km"), km);
+        QString label = QDateTime::fromMSecsSinceEpoch(start * 1000)
+                .toString(QStringLiteral("dd/MM HH:mm"))
+                + QStringLiteral(" – ")
+                + QDateTime::fromMSecsSinceEpoch(end * 1000)
+                  .toString(QStringLiteral("HH:mm"));
+        const QString custom = tripNames.value(QString::number(start)).toString();
+        if (!custom.isEmpty()) {
+            label = custom;
+        }
+        trip.insert(QStringLiteral("label"), label);
+        m_trips.append(trip);
+    };
+
     qint64 tripStart = 0;
     qint64 tripLast = 0;
     int tripCount = 0;
@@ -213,18 +236,7 @@ void HistoryModel::reload()
         if (tripStart == 0) {
             tripStart = ts;
         } else if (ts - tripLast > 1800) {
-            QVariantMap trip;
-            trip.insert(QStringLiteral("startTs"), tripStart);
-            trip.insert(QStringLiteral("endTs"), tripLast);
-            trip.insert(QStringLiteral("count"), tripCount);
-            trip.insert(QStringLiteral("km"), tripKm);
-            trip.insert(QStringLiteral("label"),
-                        QDateTime::fromMSecsSinceEpoch(tripStart * 1000)
-                        .toString(QStringLiteral("dd/MM HH:mm"))
-                        + QStringLiteral(" – ")
-                        + QDateTime::fromMSecsSinceEpoch(tripLast * 1000)
-                          .toString(QStringLiteral("HH:mm")));
-            m_trips.append(trip);
+            appendTrip(tripStart, tripLast, tripCount, tripKm);
             tripStart = ts;
             tripCount = 0;
             tripKm = 0.0;
@@ -247,18 +259,7 @@ void HistoryModel::reload()
     }
 
     if (tripStart != 0) {
-        QVariantMap trip;
-        trip.insert(QStringLiteral("startTs"), tripStart);
-        trip.insert(QStringLiteral("endTs"), tripLast);
-        trip.insert(QStringLiteral("count"), tripCount);
-        trip.insert(QStringLiteral("km"), tripKm);
-        trip.insert(QStringLiteral("label"),
-                    QDateTime::fromMSecsSinceEpoch(tripStart * 1000)
-                    .toString(QStringLiteral("dd/MM HH:mm"))
-                    + QStringLiteral(" – ")
-                    + QDateTime::fromMSecsSinceEpoch(tripLast * 1000)
-                      .toString(QStringLiteral("HH:mm")));
-        m_trips.append(trip);
+        appendTrip(tripStart, tripLast, tripCount, tripKm);
     }
 
     const int maxPoints = 1500;
@@ -293,6 +294,18 @@ void HistoryModel::reload()
     }
 
     emit changed();
+}
+
+void HistoryModel::setTripName(qint64 startTs, const QString &name)
+{
+    QSettings names(TrackLog::dataDir() + QStringLiteral("/trips.ini"), QSettings::IniFormat);
+    if (name.trimmed().isEmpty()) {
+        names.remove(QString::number(startTs));
+    } else {
+        names.setValue(QString::number(startTs), name.trimmed());
+    }
+    names.sync();
+    reload();
 }
 
 QVariantList HistoryModel::gpxFiles() const
@@ -382,11 +395,19 @@ QString HistoryModel::exportGpx()
     xml.writeTextElement(QStringLiteral("name"), QStringLiteral("TrackLog"));
     xml.writeStartElement(QStringLiteral("trkseg"));
 
+    qint64 previousTs = 0;
     for (const QVariantList &row : rows) {
         const qint64 ts = row.at(0).toLongLong();
         const double lat = row.at(1).toDouble();
         const double lon = row.at(2).toDouble();
         const double alt = row.at(3).toDouble();
+
+        // A long gap starts a new segment instead of a straight line.
+        if (previousTs > 0 && ts - previousTs > 600) {
+            xml.writeEndElement(); // trkseg
+            xml.writeStartElement(QStringLiteral("trkseg"));
+        }
+        previousTs = ts;
 
         xml.writeStartElement(QStringLiteral("trkpt"));
         xml.writeAttribute(QStringLiteral("lat"), QString::number(lat, 'f', 7));

@@ -8,6 +8,7 @@ Page {
     property var intervals: [30, 60, 120, 300]
     property var tileCodes: ["osm", "topo", "cyclosm"]
     property string testResult: ""
+    property string backupMessage: ""
     property real cacheBytes: 0
 
     function cacheText() {
@@ -165,6 +166,26 @@ Page {
             Button {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("Copia de seguridad de la base de datos")
+                onClicked: {
+                    page.backupMessage = qsTr("Creando copia…")
+                    trackclient.backupDatabase()
+                }
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                visible: page.backupMessage.length > 0
+                text: page.backupMessage
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+                wrapMode: Text.Wrap
+            }
+
+            Button {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
                 text: qsTr("Borrar caché de mapas")
                 onClicked: {
                     tilestore.clearCache()
@@ -283,6 +304,11 @@ Page {
                     : (result.error.length > 0
                        ? result.error
                        : qsTr("Error de conexión"))
+        }
+        onBackupFinished: {
+            page.backupMessage = path.length > 0
+                    ? qsTr("Copia guardada en:\n") + path
+                    : qsTr("No se pudo crear la copia")
         }
     }
 }

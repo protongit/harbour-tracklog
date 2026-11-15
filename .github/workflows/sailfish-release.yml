@@ -1,0 +1,60 @@
+name: Build SailfishOS RPMs
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      sailfish_release:
+        description: SailfishOS Platform SDK release
+        required: true
+        default: 5.1.0.11
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sailfish-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DEFAULT_SAILFISH_RELEASE: 5.1.0.11
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }} RPM
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - aarch64
+          - armv7hl
+          - i486
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select SailfishOS release
+        id: release
+        env:
+          INPUT_RELEASE: ${{ inputs.sailfish_release }}
+        run: |
+          release="${INPUT_RELEASE:-${DEFAULT_SAILFISH_RELEASE}}"
+          echo "release=${release}" >> "$GITHUB_OUTPUT"
+
+      - name: Build RPM
+        uses: R1tschY/sailfish-build-rpm@v1
+        with:
+          arch: ${{ matrix.arch }}
+          release: ${{ steps.release.outputs.release }}
+          check: false
+          fix-version: false
+
+      - name: Upload RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpms-${{ matrix.arch }}
+          path: RPMS/*.rpm

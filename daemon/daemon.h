@@ -35,6 +35,7 @@ public slots:
     QVariantList GetPoints(qint64 from, qint64 to, int limit);
     QString ExportGpx(qint64 from, qint64 to);
     int ImportGpx(const QString &path);
+    QString BackupDatabase();
 
 signals:
     void StatusChanged(const QVariantMap &status);

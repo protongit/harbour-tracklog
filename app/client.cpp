@@ -234,6 +234,19 @@ void TrackClient::importGpx(const QString &path)
     });
 }
 
+void TrackClient::backupDatabase()
+{
+    const QDBusPendingCall call = m_iface->asyncCall(QStringLiteral("BackupDatabase"));
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this,
+            [this](QDBusPendingCallWatcher *self) {
+        QDBusPendingReply<QString> reply = *self;
+        const QString path = reply.isError() ? QString() : reply.value();
+        self->deleteLater();
+        emit backupFinished(path);
+    });
+}
+
 void TrackClient::onStatusChanged(const QVariantMap &status)
 {
     m_serviceRunning = true;
