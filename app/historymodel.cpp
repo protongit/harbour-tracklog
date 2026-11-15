@@ -3,9 +3,11 @@
 #include <QDate>
 #include <QDir>
 #include <QFileInfo>
+#include <QMap>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
+#include <QVector>
 #include <QtMath>
 
 #include "tracklogpaths.h"
