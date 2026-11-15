@@ -1,7 +1,7 @@
 Name:       harbour-tracklog
 Summary:    GPS logger with on-device history and background daemon
 Version:    0.1
-Release:    2
+Release:    3
 License:    MIT
 URL:        https://github.com/hensip/harbour-tracklog
 Source0:    %{name}-%{version}.tar.bz2
