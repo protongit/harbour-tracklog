@@ -109,9 +109,11 @@ static int runQmlCheck()
 
 int main(int argc, char *argv[])
 {
-    const bool checkMode = QCoreApplication::arguments().contains(QStringLiteral("--check"));
-    if (checkMode) {
-        qputenv("QT_QPA_PLATFORM", "minimal");
+    bool checkMode = false;
+    for (int i = 1; i < argc; ++i) {
+        if (qstrcmp(argv[i], "--check") == 0) {
+            checkMode = true;
+        }
     }
 
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));
