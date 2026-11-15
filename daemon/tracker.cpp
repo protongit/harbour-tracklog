@@ -50,7 +50,7 @@ qint64 Tracker::lastFixTimestamp() const
     if (!m_latest.isValid()) {
         return 0;
     }
-    return m_latest.timestamp().toSecsSinceEpoch();
+    return m_latest.timestamp().toMSecsSinceEpoch() / 1000;
 }
 
 int Tracker::recordedCount() const
