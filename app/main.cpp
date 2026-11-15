@@ -71,10 +71,14 @@ static QStringList qmlFiles()
 
 static int runQmlCheck()
 {
+    qInfo() << "check: creating client";
     TrackClient client;
+    qInfo() << "check: creating history model";
     HistoryModel history;
+    qInfo() << "check: creating tile store";
     TileStore tileStore;
 
+    qInfo() << "check: creating engine";
     QQmlEngine engine;
     engine.addImageProvider(QStringLiteral("tiles"), new TileProvider(&tileStore));
     engine.rootContext()->setContextProperty(QStringLiteral("trackclient"), &client);
@@ -85,6 +89,7 @@ static int runQmlCheck()
     const QStringList files = qmlFiles();
     qInfo() << "checking" << files.size() << "QML files";
     for (const QString &file : files) {
+        qInfo() << "check:" << file;
         QQmlComponent component(&engine, QUrl::fromLocalFile(file));
         if (component.isError()) {
             ++errors;
