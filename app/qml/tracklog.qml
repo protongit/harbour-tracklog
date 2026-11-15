@@ -8,4 +8,8 @@ ApplicationWindow {
     initialPage: Component { MainPage { } }
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
     allowedOrientations: defaultAllowedOrientations
+
+    function openHistory() {
+        pageStack.push(Qt.resolvedUrl("pages/HistoryPage.qml"))
+    }
 }

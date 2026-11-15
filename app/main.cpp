@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QDirIterator>
 #include <QFile>
+#include <QTimer>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QtQuick>
@@ -110,9 +111,12 @@ static int runQmlCheck()
 int main(int argc, char *argv[])
 {
     bool checkMode = false;
+    bool openHistory = false;
     for (int i = 1; i < argc; ++i) {
         if (qstrcmp(argv[i], "--check") == 0) {
             checkMode = true;
+        } else if (qstrcmp(argv[i], "--open-history") == 0) {
+            openHistory = true;
         }
     }
 
@@ -143,6 +147,15 @@ int main(int argc, char *argv[])
 
     view->setSource(SailfishApp::pathTo(QStringLiteral("qml/tracklog.qml")));
     view->show();
+
+    if (openHistory) {
+        QTimer::singleShot(1500, [&view]() {
+            if (view->rootObject()) {
+                QMetaObject::invokeMethod(view->rootObject(), "openHistory");
+            }
+        });
+        QTimer::singleShot(8000, qApp, SLOT(quit()));
+    }
 
     return app->exec();
 }
