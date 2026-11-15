@@ -18,10 +18,13 @@ public:
 
 signals:
     void tileReady(const QString &id);
+    void tileNeeded(const QString &id);
+
+private slots:
+    void fetch(const QString &id);
 
 private:
     QString cachePath(const QString &id) const;
-    void fetch(const QString &id);
 
     QNetworkAccessManager m_nam;
     QSet<QString> m_pending;

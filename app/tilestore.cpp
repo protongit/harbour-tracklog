@@ -13,6 +13,7 @@ TileStore::TileStore(QObject *parent)
     : QObject(parent)
 {
     QDir().mkpath(TrackLog::tilesDir());
+    connect(this, &TileStore::tileNeeded, this, &TileStore::fetch);
 }
 
 QString TileStore::cachePath(const QString &rawId) const
@@ -47,14 +48,20 @@ QImage TileStore::image(const QString &rawId)
             return cached;
         }
     }
-    if (!id.isEmpty() && !m_pending.contains(id)) {
-        fetch(id);
+    if (!id.isEmpty()) {
+        // requestImage() may run on the QQuickPixmapReader thread: hand the
+        // network request over to the main thread.
+        emit tileNeeded(id);
     }
     return QImage(256, 256, QImage::Format_ARGB32_Premultiplied);
 }
 
 void TileStore::fetch(const QString &id)
 {
+    if (m_pending.contains(id)) {
+        return;
+    }
+
     const QStringList parts = id.split(QLatin1Char('/'));
     if (parts.size() != 3) {
         return;
