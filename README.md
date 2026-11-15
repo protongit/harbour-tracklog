@@ -13,6 +13,7 @@ plano e histórico sobre mapa.
   servicio, con estado en vivo (GPS, precisión, puntos, pendientes, errores).
 - **Histórico**: filtro por periodo (hoy / 7 / 30 días o rango con selector de
   fechas), traza sobre mapa OSM con caché de tiles, distancia y resumen por día.
+  Exporta el periodo a **GPX** en `~/Documents/TrackLog/`.
 - **Subida opcional** a PhoneTrack (o URL estilo Traccar), con cola persistente,
   reintentos con backoff y sin borrar nunca los puntos locales.
 
@@ -51,6 +52,7 @@ tracklogd (systemd --user, fuera de sailjail)
 | `~/.local/share/org.hensip/tracklog/tiles/` | caché de tiles OSM |
 | `~/.local/share/org.hensip/tracklog/tracklogd.log` | log del demonio (rota a 512 KB) |
 | `~/.local/share/org.hensip/tracklog/app.log` | log de la app (rota a 256 KB) |
+| `~/Documents/TrackLog/*.gpx` | exportaciones GPX |
 
 ## Compilar
 
@@ -83,6 +85,9 @@ El `%post` crea el enlace de autostart en
   (el ID se añade detrás). Con "URL estilo Traccar" se usa `?id=<id>`.
 - **ID del dispositivo**: nombre con el que aparecerá en PhoneTrack.
 - **Intervalo**: 30 s / 60 s / 2 min / 5 min.
+- **Precisión máxima (m)**: descarta puntos con peor precisión.
+- **Distancia mínima (m)**: separación mínima entre puntos (además de la
+  precisión actual).
 - **Subir puntos**: activa la cola de subida.
 - **Grabar al iniciar**: arranca la grabación al iniciar sesión.
 
@@ -125,14 +130,15 @@ Implementado y probado en Jolla Phone 2026 (Sailfish OS 5.2.0.22):
 - [x] Permiso sailjail para el D-Bus propio
 - [x] App de control (estado, grabación, servicio, ajustes)
 - [x] Histórico con filtro de fechas, lista de días y mapa con caché
+- [x] Exportar GPX a `~/Documents/TrackLog/`
+- [x] Pinch-zoom y filtros de captura configurables
 - [x] Subida a PhoneTrack con cola y reintentos
 
 Pendiente / ideas:
 
-- [ ] Exportar GPX
-- [ ] Perfiles de batería y filtro por distancia configurable desde la UI
 - [ ] Traducciones (inglés)
-- [ ] Pinch-zoom y gestos en el mapa
+- [ ] Perfiles de batería predefinidos (p. ej. "excursión", "diario")
+- [ ] Compartir el GPX desde la app
 - [ ] Empaquetado para Chum/Harbour
 
 ## Licencia
