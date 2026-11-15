@@ -1,0 +1,3 @@
+# TrackLog: la app necesita hablar con su demonio
+dbus-user.talk org.hensip.tracklog
+dbus-user.broadcast org.hensip.tracklog=org.hensip.tracklog.*@/*

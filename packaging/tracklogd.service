@@ -1,0 +1,15 @@
+[Unit]
+Description=TrackLog location recorder
+Documentation=https://github.com/hensip/harbour-tracklog
+After=dbus.service
+PartOf=default.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tracklogd
+Restart=on-failure
+RestartSec=5
+Nice=10
+
+[Install]
+WantedBy=default.target

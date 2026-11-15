@@ -1,0 +1,9 @@
+*.o
+moc_*
+Makefile
+Makefile.*
+/RPMS/
+/.sfdk/
+/harbour-tracklog-*.tar.bz2
+app/harbour-tracklog
+daemon/tracklogd

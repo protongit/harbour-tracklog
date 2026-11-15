@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.hensip.tracklog
+Exec=/usr/bin/tracklogd

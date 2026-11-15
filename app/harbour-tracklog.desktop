@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Icon=harbour-tracklog
+Exec=harbour-tracklog
+Name=TrackLog
+Name[es]=TrackLog
+Comment=GPS logger with on-device history
+Comment[es]=Registrador GPS con histórico en el dispositivo
+Categories=Utility;Location;
+
+[X-Sailjail]
+OrganizationName=org.hensip
+ApplicationName=tracklog
+Permissions=Internet;Location;TrackLog
