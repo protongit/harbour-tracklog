@@ -7,3 +7,5 @@ Makefile.*
 /harbour-tracklog-*.tar.bz2
 app/harbour-tracklog
 daemon/tracklogd
+
+documentation.list
