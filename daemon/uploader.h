@@ -22,6 +22,8 @@ public:
     QString lastError() const;
     int uploadedCount() const;
 
+    static QString buildUrl(const Config &config, const TrackPoint &point);
+
 signals:
     void uploadSucceeded(qint64 id);
     void uploadFailed(const QString &error);

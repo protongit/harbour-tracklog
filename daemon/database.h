@@ -4,6 +4,7 @@
 #include <QDateTime>
 #include <QSqlDatabase>
 #include <QString>
+#include <QVariantMap>
 #include <QVector>
 
 struct TrackPoint
@@ -15,7 +16,7 @@ struct TrackPoint
     double altitude = 0.0;
     double speed = 0.0;
     double bearing = 0.0;
-    double accuracy = 0.0;
+    double accuracy = -1.0; // negative: unknown
     int battery = -1;
     int charging = -1;
     bool uploaded = false;
@@ -42,14 +43,21 @@ public:
     int pointsSince(const QDateTime &from) const;
 
     QVector<TrackPoint> pointsBetween(const QDateTime &from, const QDateTime &to) const;
+    QVariantMap lastPoint() const;
+
+    int pruneBefore(qint64 timestamp);
+    void checkpoint();
 
     QString lastError() const;
 
 private:
     bool exec(const QString &sql) const;
+    bool migrate();
+    void ensureColumn(const QString &name, const QString &definition);
+    int userVersion() const;
 
     QSqlDatabase m_db;
-    mutable QString m_lastError;
+    QString m_lastError;
 };
 
 #endif // DATABASE_H

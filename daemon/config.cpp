@@ -75,6 +75,44 @@ bool Config::autoStart() const
     return value(QStringLiteral("capture/autoStart"), true).toBool();
 }
 
+int Config::pauseBelowBattery() const
+{
+    const int v = value(QStringLiteral("capture/pauseBelowBattery"), 0).toInt();
+    return (v < 0 || v > 100) ? 0 : v;
+}
+
+int Config::retentionDays() const
+{
+    const int v = value(QStringLiteral("capture/retentionDays"), 0).toInt();
+    return v < 0 ? 0 : v;
+}
+
+bool Config::geofenceEnabled() const
+{
+    return value(QStringLiteral("geofence/enabled"), false).toBool();
+}
+
+double Config::geofenceLat() const
+{
+    return value(QStringLiteral("geofence/lat"), 0.0).toDouble();
+}
+
+double Config::geofenceLon() const
+{
+    return value(QStringLiteral("geofence/lon"), 0.0).toDouble();
+}
+
+int Config::geofenceRadius() const
+{
+    const int v = value(QStringLiteral("geofence/radius"), 200).toInt();
+    return v < 10 ? 10 : v;
+}
+
+QString Config::geofenceName() const
+{
+    return value(QStringLiteral("geofence/name"), QStringLiteral("Casa")).toString();
+}
+
 bool Config::tracking() const
 {
     return value(QStringLiteral("capture/tracking"), true).toBool();
@@ -101,8 +139,15 @@ QVariantMap Config::toMap() const
     map.insert(QStringLiteral("intervalSec"), intervalSec());
     map.insert(QStringLiteral("minAccuracyM"), minAccuracyM());
     map.insert(QStringLiteral("minDistanceM"), minDistanceM());
+    map.insert(QStringLiteral("pauseBelowBattery"), pauseBelowBattery());
+    map.insert(QStringLiteral("retentionDays"), retentionDays());
     map.insert(QStringLiteral("autoStart"), autoStart());
     map.insert(QStringLiteral("tracking"), tracking());
+    map.insert(QStringLiteral("geofenceEnabled"), geofenceEnabled());
+    map.insert(QStringLiteral("geofenceLat"), geofenceLat());
+    map.insert(QStringLiteral("geofenceLon"), geofenceLon());
+    map.insert(QStringLiteral("geofenceRadius"), geofenceRadius());
+    map.insert(QStringLiteral("geofenceName"), geofenceName());
     return map;
 }
 
@@ -112,7 +157,8 @@ bool Config::updateFromMap(const QVariantMap &map)
 
     const struct { const char *key; const char *setting; } stringKeys[] = {
         { "url", "upload/url" },
-        { "id", "upload/id" }
+        { "id", "upload/id" },
+        { "geofenceName", "geofence/name" }
     };
     for (const auto &entry : stringKeys) {
         const QString key = QString::fromLatin1(entry.key);
@@ -128,7 +174,8 @@ bool Config::updateFromMap(const QVariantMap &map)
     const struct { const char *key; const char *setting; } boolKeys[] = {
         { "uploadEnabled", "upload/enabled" },
         { "traccar", "upload/traccar" },
-        { "autoStart", "capture/autoStart" }
+        { "autoStart", "capture/autoStart" },
+        { "geofenceEnabled", "geofence/enabled" }
     };
     for (const auto &entry : boolKeys) {
         const QString key = QString::fromLatin1(entry.key);
@@ -144,13 +191,32 @@ bool Config::updateFromMap(const QVariantMap &map)
     const struct { const char *key; const char *setting; } intKeys[] = {
         { "intervalSec", "capture/intervalSec" },
         { "minAccuracyM", "capture/minAccuracyM" },
-        { "minDistanceM", "capture/minDistanceM" }
+        { "minDistanceM", "capture/minDistanceM" },
+        { "pauseBelowBattery", "capture/pauseBelowBattery" },
+        { "retentionDays", "capture/retentionDays" },
+        { "geofenceRadius", "geofence/radius" }
     };
     for (const auto &entry : intKeys) {
         const QString key = QString::fromLatin1(entry.key);
         if (map.contains(key)) {
             const int value = map.value(key).toInt();
             if (m_settings.value(QString::fromLatin1(entry.setting)).toInt() != value) {
+                m_settings.setValue(QString::fromLatin1(entry.setting), value);
+                changed = true;
+            }
+        }
+    }
+
+    const struct { const char *key; const char *setting; } doubleKeys[] = {
+        { "geofenceLat", "geofence/lat" },
+        { "geofenceLon", "geofence/lon" }
+    };
+    for (const auto &entry : doubleKeys) {
+        const QString key = QString::fromLatin1(entry.key);
+        if (map.contains(key)) {
+            const double value = map.value(key).toDouble();
+            if (!qFuzzyCompare(m_settings.value(QString::fromLatin1(entry.setting)).toDouble() + 1.0,
+                               value + 1.0)) {
                 m_settings.setValue(QString::fromLatin1(entry.setting), value);
                 changed = true;
             }

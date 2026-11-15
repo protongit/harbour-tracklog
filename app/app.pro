@@ -21,9 +21,11 @@ DISTFILES += \
     qml/tracklog.qml \
     qml/pages/MainPage.qml \
     qml/pages/HistoryPage.qml \
+    qml/pages/PointsPage.qml \
     qml/pages/SettingsPage.qml \
     qml/cover/CoverPage.qml \
     qml/components/DetailRow.qml \
-    qml/components/MapView.qml
+    qml/components/MapView.qml \
+    qml/components/SpeedChart.qml
 
 SAILFISHAPP_ICONS = 86x86 108x108 128x128 172x172 256x256

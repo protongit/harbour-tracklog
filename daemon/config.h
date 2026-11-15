@@ -20,7 +20,15 @@ public:
     int intervalSec() const;
     int minAccuracyM() const;
     int minDistanceM() const;
+    int pauseBelowBattery() const;
+    int retentionDays() const;
     bool autoStart() const;
+
+    bool geofenceEnabled() const;
+    double geofenceLat() const;
+    double geofenceLon() const;
+    int geofenceRadius() const;
+    QString geofenceName() const;
 
     bool tracking() const;
     void setTracking(bool tracking);

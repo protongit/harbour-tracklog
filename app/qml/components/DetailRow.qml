@@ -6,6 +6,9 @@ Item {
 
     property string label
     property string value
+    property bool interactive: false
+
+    signal clicked()
 
     width: parent ? parent.width : 0
     height: Math.max(labelLabel.height, valueLabel.height) + Theme.paddingSmall
@@ -27,8 +30,14 @@ Item {
         width: parent.width / 2 - Theme.horizontalPageMargin
         horizontalAlignment: Text.AlignRight
         text: row.value
-        color: Theme.primaryColor
+        color: row.interactive ? Theme.highlightColor : Theme.primaryColor
         font.pixelSize: Theme.fontSizeSmall
         truncationMode: TruncationMode.Fade
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        enabled: row.interactive
+        onClicked: row.clicked()
     }
 }

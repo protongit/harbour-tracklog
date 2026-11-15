@@ -49,7 +49,14 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     QCoreApplication::setOrganizationName(QStringLiteral("org.hensip"));
     QCoreApplication::setApplicationName(QStringLiteral("tracklog"));
-    QCoreApplication::setApplicationVersion(QStringLiteral("0.1"));
+    QCoreApplication::setApplicationVersion(QStringLiteral("0.2"));
+
+    bool selftest = false;
+    for (int i = 1; i < argc; ++i) {
+        if (qstrcmp(argv[i], "--selftest") == 0) {
+            selftest = true;
+        }
+    }
 
     TrackLog::ensureDataDir();
     rotateLog();
@@ -70,6 +77,19 @@ int main(int argc, char *argv[])
     if (!daemon.init()) {
         qCritical() << "daemon initialisation failed";
         return 3;
+    }
+
+    if (selftest) {
+        const QVariantMap status = daemon.GetStatus();
+        qInfo() << "selftest database:" << status.value(QStringLiteral("db")).toString();
+        qInfo() << "selftest points today:" << status.value(QStringLiteral("pointsToday")).toInt();
+        qInfo() << "selftest pending uploads:" << status.value(QStringLiteral("pending")).toInt();
+        qInfo() << "selftest interval:" << status.value(QStringLiteral("intervalSec")).toInt();
+        qInfo() << "selftest upload enabled:" << status.value(QStringLiteral("uploadEnabled")).toBool();
+        qInfo() << "selftest url set:" << !status.value(QStringLiteral("url")).toString().isEmpty();
+        qInfo() << "selftest battery:" << status.value(QStringLiteral("battery")).toInt();
+        qInfo() << "selftest done";
+        return 0;
     }
 
     if (!bus.registerObject(QString::fromLatin1(TrackLog::dbusPath()), &daemon,

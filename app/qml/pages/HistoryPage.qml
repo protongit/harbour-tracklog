@@ -10,6 +10,8 @@ Page {
     property date toDate: new Date()
     property bool ready: false
     property string exportPath: ""
+    property string importMessage: ""
+    property string prefetchText: ""
 
     function applyPreset(index) {
         var now = new Date()
@@ -40,6 +42,21 @@ Page {
         history.setRangeMs(from.getTime(), to.getTime())
     }
 
+    function selectDay(dateString) {
+        var start = new Date(dateString + "T00:00:00")
+        if (isNaN(start.getTime())) {
+            return
+        }
+        page.fromDate = start
+        page.toDate = start
+        page.applyRange()
+    }
+
+    function openPoints() {
+        pageStack.push(Qt.resolvedUrl("PointsPage.qml"),
+                       { "fromDate": page.fromDate, "toDate": page.toDate })
+    }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: content.height + Theme.paddingLarge
@@ -48,6 +65,10 @@ Page {
             MenuItem {
                 text: qsTr("Actualizar")
                 onClicked: history.reload()
+            }
+            MenuItem {
+                text: qsTr("Importar GPX")
+                onClicked: importDialog.open()
             }
         }
 
@@ -88,26 +109,54 @@ Page {
                 }
             }
 
-            MapView {
-                id: map
+            Item {
                 width: parent.width
-                height: Math.max(Theme.itemSizeLarge * 4, page.height * 0.42)
-                points: history.points
+                height: map.height
+
+                MapView {
+                    id: map
+                    width: parent.width
+                    height: Math.max(Theme.itemSizeLarge * 4, page.height * 0.42)
+                    points: history.points
+                }
+
+                Column {
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: Theme.paddingSmall
+                    spacing: Theme.paddingSmall
+
+                    Label {
+                        anchors.right: parent.right
+                        text: page.prefetchText
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                        color: Theme.highlightColor
+                    }
+
+                    Button {
+                        text: qsTr("Descargar zona")
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                        onClicked: {
+                            page.prefetchText = qsTr("descargando…")
+                            tilestore.prefetch(map.centerLat, map.centerLon, map.zoom, 2)
+                        }
+                    }
+                }
             }
 
-            DetailRow { label: qsTr("Periodo"); value: history.rangeText }
-            DetailRow { label: qsTr("Puntos"); value: history.pointCount }
-            DetailRow {
-                label: qsTr("Distancia")
-                value: history.distanceKm.toFixed(2) + " km"
-            }
-
-            Button {
+            Row {
                 x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                text: qsTr("Exportar GPX")
-                enabled: !history.empty
-                onClicked: page.exportPath = history.exportGpx()
+                spacing: Theme.paddingMedium
+
+                Button {
+                    text: qsTr("Ver puntos")
+                    onClicked: page.openPoints()
+                }
+                Button {
+                    text: qsTr("Exportar GPX")
+                    enabled: !history.empty
+                    onClicked: page.exportPath = history.exportGpx()
+                }
             }
 
             Label {
@@ -120,6 +169,52 @@ Page {
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
                 wrapMode: Text.Wrap
+            }
+
+            DetailRow { label: qsTr("Periodo"); value: history.rangeText }
+            DetailRow { label: qsTr("Puntos"); value: history.pointCount }
+            DetailRow {
+                label: qsTr("Distancia")
+                value: history.distanceKm.toFixed(2) + " km"
+            }
+            DetailRow {
+                label: qsTr("Velocidad media")
+                value: history.avgSpeedKmh.toFixed(1) + " km/h"
+            }
+            DetailRow {
+                label: qsTr("Velocidad máxima")
+                value: history.maxSpeedKmh.toFixed(1) + " km/h"
+            }
+            DetailRow {
+                label: qsTr("Desnivel positivo")
+                value: Math.round(history.ascentM) + " m"
+            }
+
+            SectionHeader { text: qsTr("Velocidad") }
+
+            SpeedChart {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                points: history.points
+            }
+
+            SectionHeader { text: qsTr("Recorridos") }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                visible: history.trips.length === 0
+                text: qsTr("Sin recorridos")
+                color: Theme.secondaryColor
+            }
+
+            Repeater {
+                model: history.trips
+
+                delegate: DetailRow {
+                    label: modelData.label
+                    value: modelData.km.toFixed(1) + " km"
+                }
             }
 
             SectionHeader { text: qsTr("Días") }
@@ -138,7 +233,18 @@ Page {
                 delegate: DetailRow {
                     label: modelData.date
                     value: modelData.count + qsTr(" puntos")
+                    interactive: true
+                    onClicked: page.selectDay(modelData.date)
                 }
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+                wrapMode: Text.Wrap
+                text: qsTr("Toca un día para filtrarlo")
             }
         }
     }
@@ -161,8 +267,73 @@ Page {
         }
     }
 
+    Dialog {
+        id: importDialog
+        property var files: []
+
+        onOpened: files = history.gpxFiles()
+        onAccepted: close()
+
+        Column {
+            width: parent.width
+
+            DialogHeader {
+                title: qsTr("Importar GPX")
+                acceptText: qsTr("Cerrar")
+                cancelText: ""
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: importDialog.files.length === 0
+                      ? qsTr("No hay archivos GPX en Documentos/TrackLog")
+                      : qsTr("Archivos en Documentos/TrackLog")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.secondaryColor
+                wrapMode: Text.Wrap
+            }
+
+            Repeater {
+                model: importDialog.files
+
+                delegate: BackgroundItem {
+                    width: parent ? parent.width : 0
+                    height: Theme.itemSizeSmall
+
+                    Label {
+                        x: Theme.horizontalPageMargin
+                        text: modelData.name
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+
+                    onClicked: {
+                        trackclient.importGpx(modelData.path)
+                        importDialog.close()
+                    }
+                }
+            }
+        }
+    }
+
     Component.onCompleted: {
         page.ready = true
         page.applyPreset(1)
+    }
+
+    Connections {
+        target: tilestore
+        onPrefetchProgress: page.prefetchText = done + " / " + total
+        onPrefetchFinished: page.prefetchText = qsTr("zona descargada")
+    }
+
+    Connections {
+        target: trackclient
+        onImportFinished: {
+            page.importMessage = count > 0
+                    ? qsTr("Importados ") + count + qsTr(" puntos")
+                    : qsTr("No se pudo importar")
+            history.reload()
+        }
     }
 }

@@ -19,6 +19,15 @@ Item {
     function worldSize() { return Math.pow(2, zoom) * tileSize }
     function worldSizeAt(z) { return Math.pow(2, z) * tileSize }
 
+    function distanceMeters(lat1, lon1, lat2, lon2) {
+        var dLat = (lat2 - lat1) * Math.PI / 180
+        var dLon = (lon2 - lon1) * Math.PI / 180
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    }
+
     function lonToX(lon) { return (lon + 180) / 360 * worldSize() }
     function latToY(lat) {
         var s = Math.sin(lat * Math.PI / 180)
@@ -166,27 +175,63 @@ Item {
             var ox = map.width / 2 - cx
             var oy = map.height / 2 - cy
 
-            if (map.points.length > 1) {
-                ctx.strokeStyle = Theme.highlightColor
-                ctx.lineWidth = 4
-                ctx.lineJoin = "round"
-                ctx.lineCap = "round"
+            var points = map.points
+            var bands = [
+                { "min": 0, "max": 6, "color": "#4caf50" },
+                { "min": 6, "max": 20, "color": "#cddc39" },
+                { "min": 20, "max": 40, "color": "#ff9800" },
+                { "min": 40, "max": 100000, "color": "#f44336" }
+            ]
+
+            ctx.lineWidth = 4
+            ctx.lineJoin = "round"
+            ctx.lineCap = "round"
+
+            for (var b = 0; b < bands.length; ++b) {
+                var band = bands[b]
+                ctx.strokeStyle = band.color
                 ctx.beginPath()
-                for (var i = 0; i < map.points.length; ++i) {
-                    var p = map.points[i]
-                    var x = map.lonToX(p.lon) + ox
-                    var y = map.latToY(p.lat) + oy
-                    if (i === 0) {
-                        ctx.moveTo(x, y)
-                    } else {
-                        ctx.lineTo(x, y)
+                var drawing = false
+
+                for (var i = 1; i < points.length; ++i) {
+                    var p0 = points[i - 1]
+                    var p1 = points[i]
+                    var gap = p1.ts - p0.ts
+                    var jump = map.distanceMeters(p0.lat, p0.lon, p1.lat, p1.lon)
+                    var speed = p1.speed || 0
+
+                    if (gap > 600 || jump > 2000) {
+                        drawing = false
+                        continue
                     }
+                    if (speed < band.min || speed >= band.max) {
+                        drawing = false
+                        continue
+                    }
+
+                    var x0 = map.lonToX(p0.lon) + ox
+                    var y0 = map.latToY(p0.lat) + oy
+                    var x1 = map.lonToX(p1.lon) + ox
+                    var y1 = map.latToY(p1.lat) + oy
+                    if (!drawing) {
+                        ctx.moveTo(x0, y0)
+                        drawing = true
+                    }
+                    ctx.lineTo(x1, y1)
                 }
                 ctx.stroke()
             }
 
-            var first = map.points[0]
-            var last = map.points[map.points.length - 1]
+            ctx.fillStyle = Theme.secondaryColor
+            for (var m = 10; m < points.length - 1; m += 10) {
+                ctx.beginPath()
+                ctx.arc(map.lonToX(points[m].lon) + ox, map.latToY(points[m].lat) + oy,
+                        2.5, 0, 2 * Math.PI)
+                ctx.fill()
+            }
+
+            var first = points[0]
+            var last = points[points.length - 1]
 
             ctx.fillStyle = "#4caf50"
             ctx.beginPath()

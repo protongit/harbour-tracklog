@@ -6,9 +6,7 @@
 #include <QUrl>
 
 #include "config.h"
-#include "tracklogpaths.h"
-
-Uploader::Uploader(Database *db, Config *config, QObject *parent)
+#include "tracklogpaths.h"Uploader::Uploader(Database *db, Config *config, QObject *parent)
     : QObject(parent)
     , m_db(db)
     , m_config(config)
@@ -67,7 +65,7 @@ void Uploader::next()
     }
 
     m_current = points.first();
-    const QString url = buildUrl(m_current);
+    const QString url = buildUrl(*m_config, m_current);
     if (url.isEmpty()) {
         return;
     }
@@ -148,9 +146,9 @@ void Uploader::scheduleRetry()
     qInfo() << "tracklogd: retry in" << delays[index] << "seconds";
 }
 
-QString Uploader::buildUrl(const TrackPoint &point) const
+QString Uploader::buildUrl(const Config &config, const TrackPoint &point)
 {
-    QString base = m_config->url().trimmed();
+    QString base = config.url().trimmed();
     if (base.isEmpty()) {
         return QString();
     }
@@ -160,11 +158,13 @@ QString Uploader::buildUrl(const TrackPoint &point) const
            << QStringLiteral("lon=") + QString::number(point.longitude, 'f', 7)
            << QStringLiteral("timestamp=") + QString::number(point.timestamp * 1000)
            << QStringLiteral("alt=") + QString::number(point.altitude, 'f', 2)
-           << QStringLiteral("speed=") + QString::number(point.speed, 'f', 2)
-           << QStringLiteral("acc=") + QString::number(point.accuracy, 'f', 2);
+           << QStringLiteral("speed=") + QString::number(point.speed, 'f', 2);
+    if (point.accuracy >= 0.0) {
+        params << QStringLiteral("acc=") + QString::number(point.accuracy, 'f', 2);
+    }
 
-    if (m_config->traccar()) {
-        params.prepend(QStringLiteral("id=") + m_config->deviceId());
+    if (config.traccar()) {
+        params.prepend(QStringLiteral("id=") + config.deviceId());
         return base + (base.contains(QLatin1Char('?')) ? QStringLiteral("&") : QStringLiteral("?"))
                 + params.join(QLatin1Char('&'));
     }
@@ -173,5 +173,5 @@ QString Uploader::buildUrl(const TrackPoint &point) const
         base += QLatin1Char('/');
     }
     params << QStringLiteral("useragent=") + QString::fromLatin1(TrackLog::userAgent());
-    return base + m_config->deviceId() + QLatin1Char('?') + params.join(QLatin1Char('&'));
+    return base + config.deviceId() + QLatin1Char('?') + params.join(QLatin1Char('&'));
 }

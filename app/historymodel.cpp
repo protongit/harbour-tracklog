@@ -11,6 +11,8 @@
 #include <QVariant>
 #include <QVector>
 #include <QXmlStreamWriter>
+
+#include <cmath>
 #include <QtMath>
 
 #include "tracklogpaths.h"
@@ -90,8 +92,12 @@ void HistoryModel::reload()
 {
     m_points.clear();
     m_days.clear();
+    m_trips.clear();
     m_pointCount = 0;
     m_distanceKm = 0.0;
+    m_maxSpeedKmh = 0.0;
+    m_avgSpeedKmh = 0.0;
+    m_ascentM = 0.0;
 
     if (!ensureDatabase()) {
         emit changed();
@@ -116,19 +122,35 @@ void HistoryModel::reload()
     double previousLat = 0.0;
     double previousLon = 0.0;
     bool havePrevious = false;
+    double speedSum = 0.0;
+    int speedCount = 0;
+    double previousAltitude = -1000.0;
 
     while (query.next()) {
         const qint64 ts = query.value(0).toLongLong();
         const double lat = query.value(1).toDouble();
         const double lon = query.value(2).toDouble();
+        const double speed = query.value(3).toDouble();
+        const QVariant accValue = query.value(4);
+        const double acc = accValue.isNull() ? -1.0 : accValue.toDouble();
+        const bool uploaded = query.value(5).toInt() == 1;
+
+        const double speedKmh = speed > 0.0 ? speed * 3.6 : 0.0;
+        if (speedKmh > m_maxSpeedKmh) {
+            m_maxSpeedKmh = speedKmh;
+        }
+        if (speedKmh > 0.5) {
+            speedSum += speedKmh;
+            ++speedCount;
+        }
 
         QVariantMap point;
         point.insert(QStringLiteral("ts"), ts);
         point.insert(QStringLiteral("lat"), lat);
         point.insert(QStringLiteral("lon"), lon);
-        point.insert(QStringLiteral("speed"), query.value(3).toDouble());
-        point.insert(QStringLiteral("acc"), query.value(4).toDouble());
-        point.insert(QStringLiteral("uploaded"), query.value(5).toInt() == 1);
+        point.insert(QStringLiteral("speed"), speedKmh);
+        point.insert(QStringLiteral("acc"), acc);
+        point.insert(QStringLiteral("uploaded"), uploaded);
         all.append(point);
         ++m_pointCount;
 
@@ -143,6 +165,100 @@ void HistoryModel::reload()
         previousLat = lat;
         previousLon = lon;
         havePrevious = true;
+    }
+
+    if (speedCount > 0) {
+        m_avgSpeedKmh = speedSum / speedCount;
+    }
+
+    // Ascent only uses valid altitudes.
+    QSqlQuery altitudeQuery(m_db);
+    altitudeQuery.prepare(QStringLiteral(
+        "SELECT alt FROM points WHERE ts >= ? AND ts <= ? ORDER BY ts ASC"));
+    altitudeQuery.addBindValue(from);
+    altitudeQuery.addBindValue(to);
+    if (altitudeQuery.exec()) {
+        while (altitudeQuery.next()) {
+            if (altitudeQuery.value(0).isNull()) {
+                previousAltitude = -1000.0;
+                continue;
+            }
+            const double altitude = altitudeQuery.value(0).toDouble();
+            if (!std::isfinite(altitude) || altitude < -100.0 || altitude > 9000.0) {
+                previousAltitude = -1000.0;
+                continue;
+            }
+            if (previousAltitude > -999.0 && altitude > previousAltitude) {
+                m_ascentM += altitude - previousAltitude;
+            }
+            previousAltitude = altitude;
+        }
+    }
+
+    // Split into trips on gaps longer than 30 minutes.
+    qint64 tripStart = 0;
+    qint64 tripLast = 0;
+    int tripCount = 0;
+    double tripKm = 0.0;
+    double tripPreviousLat = 0.0;
+    double tripPreviousLon = 0.0;
+    bool tripHasPrevious = false;
+
+    for (int i = 0; i < all.size(); ++i) {
+        const QVariantMap &point = all.at(i);
+        const qint64 ts = point.value(QStringLiteral("ts")).toLongLong();
+        const double lat = point.value(QStringLiteral("lat")).toDouble();
+        const double lon = point.value(QStringLiteral("lon")).toDouble();
+
+        if (tripStart == 0) {
+            tripStart = ts;
+        } else if (ts - tripLast > 1800) {
+            QVariantMap trip;
+            trip.insert(QStringLiteral("startTs"), tripStart);
+            trip.insert(QStringLiteral("endTs"), tripLast);
+            trip.insert(QStringLiteral("count"), tripCount);
+            trip.insert(QStringLiteral("km"), tripKm);
+            trip.insert(QStringLiteral("label"),
+                        QDateTime::fromMSecsSinceEpoch(tripStart * 1000)
+                        .toString(QStringLiteral("dd/MM HH:mm"))
+                        + QStringLiteral(" – ")
+                        + QDateTime::fromMSecsSinceEpoch(tripLast * 1000)
+                          .toString(QStringLiteral("HH:mm")));
+            m_trips.append(trip);
+            tripStart = ts;
+            tripCount = 0;
+            tripKm = 0.0;
+            tripHasPrevious = false;
+        }
+
+        if (tripHasPrevious) {
+            const double dLat = qDegreesToRadians(lat - tripPreviousLat);
+            const double dLon = qDegreesToRadians(lon - tripPreviousLon);
+            const double a = qSin(dLat / 2) * qSin(dLat / 2)
+                    + qCos(qDegreesToRadians(tripPreviousLat)) * qCos(qDegreesToRadians(lat))
+                    * qSin(dLon / 2) * qSin(dLon / 2);
+            tripKm += 6371.0 * 2.0 * qAtan2(qSqrt(a), qSqrt(1.0 - a));
+        }
+        tripPreviousLat = lat;
+        tripPreviousLon = lon;
+        tripHasPrevious = true;
+        tripLast = ts;
+        ++tripCount;
+    }
+
+    if (tripStart != 0) {
+        QVariantMap trip;
+        trip.insert(QStringLiteral("startTs"), tripStart);
+        trip.insert(QStringLiteral("endTs"), tripLast);
+        trip.insert(QStringLiteral("count"), tripCount);
+        trip.insert(QStringLiteral("km"), tripKm);
+        trip.insert(QStringLiteral("label"),
+                    QDateTime::fromMSecsSinceEpoch(tripStart * 1000)
+                    .toString(QStringLiteral("dd/MM HH:mm"))
+                    + QStringLiteral(" – ")
+                    + QDateTime::fromMSecsSinceEpoch(tripLast * 1000)
+                      .toString(QStringLiteral("HH:mm")));
+        m_trips.append(trip);
     }
 
     const int maxPoints = 1500;
@@ -177,6 +293,25 @@ void HistoryModel::reload()
     }
 
     emit changed();
+}
+
+QVariantList HistoryModel::gpxFiles() const
+{
+    QVariantList list;
+    const QString base = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (base.isEmpty()) {
+        return list;
+    }
+    QDir dir(base + QStringLiteral("/TrackLog"));
+    const QFileInfoList files = dir.entryInfoList(QStringList() << QStringLiteral("*.gpx"),
+                                                  QDir::Files, QDir::Time);
+    for (const QFileInfo &info : files) {
+        QVariantMap entry;
+        entry.insert(QStringLiteral("name"), info.fileName());
+        entry.insert(QStringLiteral("path"), info.absoluteFilePath());
+        list.append(entry);
+    }
+    return list;
 }
 
 QString HistoryModel::exportGpx()

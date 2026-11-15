@@ -77,6 +77,19 @@ Page {
                           : qsTr("fix"))
             }
             DetailRow {
+                label: qsTr("Modo")
+                value: trackclient.stationary
+                       ? qsTr("parado · intervalo ampliado")
+                       : qsTr("en movimiento")
+            }
+            DetailRow {
+                label: qsTr("Batería")
+                value: trackclient.battery >= 0
+                       ? trackclient.battery + " %"
+                         + (trackclient.charging ? qsTr(" · cargando") : "")
+                       : "—"
+            }
+            DetailRow {
                 label: qsTr("Puntos hoy")
                 value: trackclient.pointsToday
             }

@@ -1,6 +1,8 @@
 #include "client.h"
 
 #include <QDBusConnectionInterface>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
 #include <QDBusReply>
 #include <QSettings>
 
@@ -39,6 +41,9 @@ QString TrackClient::statusText() const
     }
     if (!fixing()) {
         return QStringLiteral("Esperando señal GPS…");
+    }
+    if (stationary()) {
+        return QStringLiteral("Sin movimiento · intervalo ampliado");
     }
     if (accuracy() > 0) {
         return QStringLiteral("Grabando · precisión %1 m").arg(accuracy(), 0, 'f', 0);
@@ -153,8 +158,80 @@ void TrackClient::writeLocalConfig(const QVariantMap &config)
         settings.setValue(QStringLiteral("capture/autoStart"),
                           config.value(QStringLiteral("autoStart")).toBool());
     }
+    if (config.contains(QStringLiteral("pauseBelowBattery"))) {
+        settings.setValue(QStringLiteral("capture/pauseBelowBattery"),
+                          config.value(QStringLiteral("pauseBelowBattery")).toInt());
+    }
+    if (config.contains(QStringLiteral("retentionDays"))) {
+        settings.setValue(QStringLiteral("capture/retentionDays"),
+                          config.value(QStringLiteral("retentionDays")).toInt());
+    }
+    if (config.contains(QStringLiteral("geofenceEnabled"))) {
+        settings.setValue(QStringLiteral("geofence/enabled"),
+                          config.value(QStringLiteral("geofenceEnabled")).toBool());
+    }
+    if (config.contains(QStringLiteral("geofenceLat"))) {
+        settings.setValue(QStringLiteral("geofence/lat"),
+                          config.value(QStringLiteral("geofenceLat")).toDouble());
+        settings.setValue(QStringLiteral("geofence/lon"),
+                          config.value(QStringLiteral("geofenceLon")).toDouble());
+    }
+    if (config.contains(QStringLiteral("geofenceRadius"))) {
+        settings.setValue(QStringLiteral("geofence/radius"),
+                          config.value(QStringLiteral("geofenceRadius")).toInt());
+    }
+    if (config.contains(QStringLiteral("geofenceName"))) {
+        settings.setValue(QStringLiteral("geofence/name"),
+                          config.value(QStringLiteral("geofenceName")).toString());
+    }
 
     settings.sync();
+}
+
+QString TrackClient::tileSource() const
+{
+    QSettings settings(TrackLog::settingsPath(), QSettings::IniFormat);
+    return settings.value(QStringLiteral("tiles/source"), QStringLiteral("osm")).toString();
+}
+
+void TrackClient::setTileSource(const QString &source)
+{
+    QSettings settings(TrackLog::settingsPath(), QSettings::IniFormat);
+    settings.setValue(QStringLiteral("tiles/source"), source);
+    settings.sync();
+    emit tileSourceChanged();
+}
+
+void TrackClient::testConnection()
+{
+    const QDBusPendingCall call = m_iface->asyncCall(QStringLiteral("TestUpload"));
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this,
+            [this](QDBusPendingCallWatcher *self) {
+        QDBusPendingReply<QVariantMap> reply = *self;
+        QVariantMap result;
+        if (reply.isError()) {
+            result.insert(QStringLiteral("ok"), false);
+            result.insert(QStringLiteral("error"), reply.error().message());
+        } else {
+            result = reply.value();
+        }
+        self->deleteLater();
+        emit testFinished(result);
+    });
+}
+
+void TrackClient::importGpx(const QString &path)
+{
+    const QDBusPendingCall call = m_iface->asyncCall(QStringLiteral("ImportGpx"), path);
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this,
+            [this](QDBusPendingCallWatcher *self) {
+        QDBusPendingReply<int> reply = *self;
+        const int count = reply.isError() ? 0 : reply.value();
+        self->deleteLater();
+        emit importFinished(count);
+    });
 }
 
 void TrackClient::onStatusChanged(const QVariantMap &status)

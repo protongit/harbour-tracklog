@@ -76,6 +76,7 @@ static int runQmlCheck()
     TrackClient client;
     qInfo() << "check: creating history model";
     HistoryModel history;
+    HistoryModel dayHistory;
     qInfo() << "check: creating tile store";
     TileStore tileStore;
 
@@ -84,6 +85,7 @@ static int runQmlCheck()
     engine.addImageProvider(QStringLiteral("tiles"), new TileProvider(&tileStore));
     engine.rootContext()->setContextProperty(QStringLiteral("trackclient"), &client);
     engine.rootContext()->setContextProperty(QStringLiteral("history"), &history);
+    engine.rootContext()->setContextProperty(QStringLiteral("dayhistory"), &dayHistory);
     engine.rootContext()->setContextProperty(QStringLiteral("tilestore"), &tileStore);
 
     int errors = 0;
@@ -148,12 +150,14 @@ int main(int argc, char *argv[])
 
     TrackClient client;
     HistoryModel history;
+    HistoryModel dayHistory;
     TileStore tileStore;
 
     view->engine()->addImageProvider(QStringLiteral("tiles"), new TileProvider(&tileStore));
 
     view->rootContext()->setContextProperty(QStringLiteral("trackclient"), &client);
     view->rootContext()->setContextProperty(QStringLiteral("history"), &history);
+    view->rootContext()->setContextProperty(QStringLiteral("dayhistory"), &dayHistory);
     view->rootContext()->setContextProperty(QStringLiteral("tilestore"), &tileStore);
 
     view->setSource(SailfishApp::pathTo(QStringLiteral("qml/tracklog.qml")));
