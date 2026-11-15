@@ -135,7 +135,6 @@ Page {
 
                     Button {
                         text: qsTr("Descargar zona")
-                        font.pixelSize: Theme.fontSizeExtraSmall
                         onClicked: {
                             page.prefetchText = qsTr("descargando…")
                             tilestore.prefetch(map.centerLat, map.centerLon, map.zoom, 2)
