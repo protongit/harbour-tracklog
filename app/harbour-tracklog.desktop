@@ -7,7 +7,7 @@ Name=TrackLog
 Name[es]=TrackLog
 Comment=GPS logger with on-device history
 Comment[es]=Registrador GPS con histórico en el dispositivo
-Categories=Utility;Location;
+Categories=Utility;
 
 [X-Sailjail]
 OrganizationName=org.hensip
