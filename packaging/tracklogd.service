@@ -5,7 +5,8 @@ After=dbus.service
 PartOf=default.target
 
 [Service]
-Type=simple
+Type=dbus
+BusName=org.hensip.tracklog
 ExecStart=/usr/bin/tracklogd
 Restart=on-failure
 RestartSec=5
