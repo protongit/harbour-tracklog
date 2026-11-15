@@ -198,6 +198,16 @@ QString HistoryModel::exportGpx()
         return QString();
     }
 
+    QVector<QVariantList> rows;
+    while (query.next()) {
+        QVariantList row;
+        row << query.value(0) << query.value(1) << query.value(2) << query.value(3);
+        rows.append(row);
+    }
+    if (rows.isEmpty()) {
+        return QString();
+    }
+
     const QString base = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (base.isEmpty()) {
         return QString();
@@ -207,8 +217,10 @@ QString HistoryModel::exportGpx()
         return QString();
     }
 
+    const qint64 firstTs = rows.first().at(0).toLongLong();
     const QString path = dir + QStringLiteral("/tracklog-")
-            + m_from.toString(QStringLiteral("yyyyMMdd-HHmm"))
+            + QDateTime::fromMSecsSinceEpoch(firstTs * 1000)
+              .toString(QStringLiteral("yyyyMMdd-HHmm"))
             + QStringLiteral(".gpx");
 
     QFile file(path);
@@ -235,11 +247,11 @@ QString HistoryModel::exportGpx()
     xml.writeTextElement(QStringLiteral("name"), QStringLiteral("TrackLog"));
     xml.writeStartElement(QStringLiteral("trkseg"));
 
-    while (query.next()) {
-        const qint64 ts = query.value(0).toLongLong();
-        const double lat = query.value(1).toDouble();
-        const double lon = query.value(2).toDouble();
-        const double alt = query.value(3).toDouble();
+    for (const QVariantList &row : rows) {
+        const qint64 ts = row.at(0).toLongLong();
+        const double lat = row.at(1).toDouble();
+        const double lon = row.at(2).toDouble();
+        const double alt = row.at(3).toDouble();
 
         xml.writeStartElement(QStringLiteral("trkpt"));
         xml.writeAttribute(QStringLiteral("lat"), QString::number(lat, 'f', 7));
