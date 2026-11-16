@@ -3,6 +3,15 @@
 Registrador GPS para Sailfish OS con almacenamiento local, demonio en segundo
 plano e histórico sobre mapa.
 
+Repositorio: <https://github.com/protongit/harbour-tracklog>
+
+```sh
+git clone https://github.com/protongit/harbour-tracklog.git
+```
+
+Versión instalada y probada: **0.2** en Jolla Phone 2026 (Sailfish OS 5.2.0.22).
+Licencia MIT. Ver `CHANGELOG.md` para el historial de cambios.
+
 ## Qué hace
 
 - **Graba en local**: cada punto se guarda en SQLite antes de nada. Nada se

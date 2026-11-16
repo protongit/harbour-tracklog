@@ -3,7 +3,7 @@ Summary:    GPS logger with on-device history and background daemon
 Version:    0.2
 Release:    1
 License:    MIT
-URL:        https://github.com/hensip/harbour-tracklog
+URL:        https://github.com/protongit/harbour-tracklog
 Source0:    %{name}-%{version}.tar.bz2
 
 Requires:   sailfishsilica-qt5 >= 0.10.9
@@ -29,11 +29,11 @@ DeveloperName: hensip
 Categories:
  - Utility
 Custom:
-  Repo: https://github.com/hensip/harbour-tracklog
-PackageIcon: https://raw.githubusercontent.com/hensip/harbour-tracklog/main/app/icons/256x256/harbour-tracklog.png
+  Repo: https://github.com/protongit/harbour-tracklog
+PackageIcon: https://raw.githubusercontent.com/protongit/harbour-tracklog/main/app/icons/256x256/harbour-tracklog.png
 Links:
-  Homepage: https://github.com/hensip/harbour-tracklog
-  Bugtracker: https://github.com/hensip/harbour-tracklog/issues
+  Homepage: https://github.com/protongit/harbour-tracklog
+  Bugtracker: https://github.com/protongit/harbour-tracklog/issues
 %endif
 
 %prep

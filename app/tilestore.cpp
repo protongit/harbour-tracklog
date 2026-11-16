@@ -107,7 +107,7 @@ void TileStore::fetch(const QString &id)
     url = url.arg(zoom).arg(x).arg(y);
     request.setUrl(QUrl(url));
     request.setHeader(QNetworkRequest::UserAgentHeader,
-                      QStringLiteral("harbour-tracklog/0.2 (Sailfish OS; +https://github.com/hensip/harbour-tracklog)"));
+                      QStringLiteral("harbour-tracklog/0.2 (Sailfish OS; +https://github.com/protongit/harbour-tracklog)"));
     request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
 
     QNetworkReply *reply = m_nam.get(request);

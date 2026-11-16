@@ -1,6 +1,6 @@
 [Unit]
 Description=TrackLog location recorder
-Documentation=https://github.com/hensip/harbour-tracklog
+Documentation=https://github.com/protongit/harbour-tracklog
 After=dbus.service
 PartOf=default.target
 
